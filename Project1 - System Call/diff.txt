@@ -1,0 +1,58 @@
+1. /include/linux/sched.h
+
+int myFlag;
+
+2./include/linux/init_task.h
+.myFlag=0, 
+
+3. /include/Makefile
+
+core-y      := usr/ mycall/ set_myFlag
+
+4. arch/x86/syscalls/syscall_32.tbl
+
+356 i386    set_myFlag          sys_set_myFlag
+
+5. include/linux/syscalls.h
+
+asmlinkage long sys_set_myFlag (pid_t pid, int flag);
+
+6. kernel/exit.c
+
+#include <linux/sched.h> // it is written by us
+#include <linux/list.h>
+
+void do_exit(long code)
+ {
+	 printk("Started do_exit...\n");
+	 struct task_struct *tsk = current;
+	 int group_dead;
+	 printk("Current--> comm: %s  pid: %d myFlag: %d priority:%d  \n", 
+			 current->comm, current->pid,current->myFlag,current->static_prio);
+
+	if((current->pid)%2==0)
+	{
+		printk("Entered to make static_prio for even_pid to make higher than 30.");
+		current->static_prio=50;
+	}
+//////////////////////////////////////////////////////////////////////////////////////////////
+	 struct task_struct *tempchild; /* it is changed by us*/
+	 struct list_head *listofChildren;
+
+	 //int niceValue=current->static_prio-120;// also we can use nice value for checking
+	 if(current->myFlag==1 && current->static_prio>30){
+				printk("myFlag is 1 and priority is larger than 30\n");								
+		list_for_each(listofChildren, &current->children) {
+			tempchild = list_entry(listofChildren, struct task_struct, sibling);
+			sys_kill(tempchild->pid,SIGKILL);
+			printk("Children process are killing...\n");	
+		}
+			sys_kill(current->pid,SIGKILL);	
+			printk("Target process is killed...\n");									
+		 //kill all child process and process 
+	 }
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+	 else{
+
+
+}
